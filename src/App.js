@@ -2,23 +2,18 @@ import logo from './logo.svg';
 import './App.css';
 
 function App() {
+
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <div className=" flex flex-col justify-center items-center">
+      <form className="w-[860px] h-[550px] flex flex-col gap-4">
+        <label className="text-black" >Enter your train number:</label>
+        <input type="text" className="bg-gray-700 p-2 rounded-md" />
+        <label className="text-black">Enter your location:</label>
+        <input type="text" className="bg-gray-700 p-2 rounded-md" />
+        <button type="submit" className="bg-blue-500 p-2 rounded-md text-white">Submit</button>
+      </form>
+  </div>
   );
 }
 
