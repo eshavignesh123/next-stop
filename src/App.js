@@ -7,7 +7,7 @@ function App() {
   const [placesData, setPlacesData] = useState(null);
   const [isScriptLoaded, setIsScriptLoaded] = useState(false);
   const locationInputRef = useRef(null);
-  const API_KEY = 'AIzaSyAJKdEwkvfjh4alllwzW3HL0O-wc3PAl1o'; // Replace with your actual API key
+  const API_KEY = 'AIzaSyADYpQcPqSp1d47cJx3NZU2W0P7blx8Ag0'; // Replace with your actual API key
 
   // Load Google Maps script
   useEffect(() => {
@@ -94,7 +94,6 @@ function App() {
           onChange={(e) => setTrainNumber(e.target.value)}
         />
         
-        <label className="text-black">Enter your location:</label>
         <input
           ref={locationInputRef}
           type="text"
@@ -110,14 +109,14 @@ function App() {
         </button>
       </form>
       
-      {trainData && (
+      {/*trainData && (
         <div className="mt-4">
           <h2 className="text-xl font-bold">Train Data:</h2>
           <pre className="bg-gray-800 p-4 rounded-md text-white overflow-auto max-h-60">
             {JSON.stringify(trainData, null, 2)}
           </pre>
         </div>
-      )}
+      )*/}
       
       {placesData && (
         <div className="mt-4">
