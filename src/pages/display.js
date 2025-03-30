@@ -1,73 +1,76 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { useLocation } from "react-router-dom";
-import { Train, Clock, AlertCircle, MapPin, Coffee, ListRestart as Restaurant, Library, Store, ArrowRight } from "lucide-react";
+import {
+  Train,
+  Clock,
+  AlertCircle,
+  MapPin,
+  Coffee,
+  Restaurant,
+  Library,
+  Store,
+} from "lucide-react";
 
 export default function Display() {
-  const [showInterestForm, setShowInterestForm] = useState(false);
-  const [showNearbyPlaces, setShowNearbyPlaces] = useState(false);
-  const [currentStep, setCurrentStep] = useState(1);
-  const [interestText, setInterestText] = useState("");
-  const [recommendations, setRecommendations] = useState([]);
-  const [typeInterests, setTypeInterests] = useState({
-    coffee: false,
-    food: false,
-    shopping: false,
-    activities: false,
-  });
-  const [interests, setInterests] = useState();
-  const [selectedInterest, setSelectedInterest] = useState(null);
-
   const location = useLocation();
   const {
     trainNumber,
     amtrakStationId,
     location: userLocation,
     arrivalDelay,
-    nearbyData
   } = location.state || {};
 
-  console.log("Nearby Data:", nearbyData);
-
+  // Convert the userLocation object to a string (assuming it might be an object)
   const locationString = userLocation
     ? JSON.stringify(userLocation)
     : "No location available";
 
+  // Example delay info and nearby places data (you should replace these with real data)
 
+  console.log(arrivalDelay);
 
-  const handleNextStep = (e) => {
-    e.preventDefault();
-    setCurrentStep(2);
+  const delayInfo = {
+    severity: "high",
+    minutes: arrivalDelay,
+    reason: "Signal issues",
+  };
+  const nearbyPlaces = [
+    {
+      name: "Coffee Shop",
+      type: "coffee",
+      distance: "200 meters",
+      rating: 4,
+      isOpen: true,
+    },
+    {
+      name: "Restaurant",
+      type: "restaurant",
+      distance: "500 meters",
+      rating: 3,
+      isOpen: false,
+    },
+    {
+      name: "Library",
+      type: "library",
+      distance: "1 km",
+      rating: 5,
+      isOpen: true,
+    },
+  ];
+
+  const getSeverityColor = (severity) => {
+    switch (severity) {
+      case "high":
+        return "bg-red-100 border-red-400";
+      case "medium":
+        return "bg-yellow-100 border-yellow-400";
+      case "low":
+        return "bg-green-100 border-green-400";
+      default:
+        return "bg-gray-100 border-gray-400";
+    }
   };
 
-  const handleInterestSubmit = (e) => {
-    e.preventDefault();
-    setShowNearbyPlaces(true);
-    setShowInterestForm(false);
-    setCurrentStep(1);
-    sendRecommendationsPost();
-
-  };
-// Frontend: Display.jsx
-const sendRecommendationsPost = async () => {
-  try {
-    console.log(nearbyData)
-    console.log(interestText)
-    const response = await fetch('/api/recommendations', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        nearbyData: nearbyData,
-        interests: interestText
-      })
-    });
-    const data = await response.json();
-    console.log("Recommendations:", data.recommendations);
-    setRecommendations(data.recommendations);
-  } catch (error) {
-    console.error('Error:', error);
-  }
-};
-  
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white py-12">
       <div className="container mx-auto px-4">
@@ -118,7 +121,19 @@ const sendRecommendationsPost = async () => {
                       Current Delay Status
                     </h2>
                     <div className="space-y-2">
-                      <p className="text-2xl font-bold">{arrivalDelay} minutes</p>
+                      {arrivalDelay < 0 ? (
+                        <p className="text-2xl font-bold text-green-600">
+                          {Math.abs(arrivalDelay)} minutes early
+                        </p>
+                      ) : arrivalDelay > 0 ? (
+                        <p className="text-2xl font-bold text-red-600">
+                          {arrivalDelay} minutes delayed
+                        </p>
+                      ) : (
+                        <p className="text-2xl font-bold text-blue-600">
+                          On time
+                        </p>
+                      )}
                     </div>
                   </div>
                   <div className="text-right">
@@ -126,202 +141,24 @@ const sendRecommendationsPost = async () => {
                     <p className="text-sm">Updated just now</p>
                   </div>
                 </div>
-
-                {/* Interest Form Button */}
-                <div className="mt-6 border-t pt-6">
-                  {!showInterestForm && !showNearbyPlaces && (
-                    <button
-                      onClick={() => setShowInterestForm(true)}
-                      className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"
-                    >
-                      <MapPin className="h-5 w-5" />
-                      <span>Explore Nearby Places</span>
-                    </button>
-                  )}
-
-                  {/* Multi-step Interest Form */}
-                  {showInterestForm && (
-                    <div className="mt-4">
-                      {/* Step indicator */}
-                      <div className="flex items-center justify-between mb-6">
-                        <div className="flex items-center">
-                          <div
-                            className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                              currentStep === 1
-                                ? "bg-blue-600 text-white"
-                                : "bg-blue-100 text-blue-600"
-                            }`}
-                          >
-                            1
-                          </div>
-                          <div className="w-12 h-1 mx-2 bg-blue-100"></div>
-                          <div
-                            className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                              currentStep === 2
-                                ? "bg-blue-600 text-white"
-                                : "bg-blue-100 text-blue-600"
-                            }`}
-                          >
-                            2
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setShowInterestForm(false);
-                            setCurrentStep(1);
-                          }}
-                          className="text-gray-500 hover:text-gray-700"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-
-                      {currentStep === 1 ? (
-                        <form onSubmit={handleNextStep}>
-                          <div className="space-y-4">
-                            <div>
-                              <label
-                                htmlFor="interests"
-                                className="block text-lg font-medium text-gray-900 mb-2"
-                              >
-                                What are you interested in doing while you wait?
-                              </label>
-                              <textarea
-                                id="interests"
-                                value={interestText}
-                                onChange={(e) => setInterestText(e.target.value)}
-                                placeholder="E.g., I'd like to grab a coffee and maybe do some shopping..."
-                                className="w-full h-32 px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                required
-                              />
-                            </div>
-                            <button
-                              type="submit"
-                              className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"
-                            >
-                              <span>Next</span>
-                              <ArrowRight className="h-5 w-5" />
-                            </button>
-                          </div>
-                        </form>
-                      ) : (
-
-                        <form onSubmit={handleInterestSubmit}>
-                          <div className="space-y-4">
-                            <p className="text-lg font-medium text-gray-900">
-                              Select categories that match your interests:
-                            </p>
-                            <div className="grid grid-cols-2 gap-4">
-                              <label className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
-                                <input
-                                  type="radio"
-                                  name="interest"
-                                  value="coffee" // Value for coffee interest
-                                  checked={selectedInterest === "coffee"} // Check if this is the selected one
-                                  onChange={(e) => setSelectedInterest(e.target.value)} // Update the state with the selected value
-                                  className="h-4 w-4 text-blue-600 rounded"
-                                />
-                                <div className="flex items-center space-x-2">
-                                  <Coffee className="h-5 w-5 text-blue-600" />
-                                  <span>Coffee Shops</span>
-                                </div>
-                              </label>
-
-                              <label className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
-                                <input
-                                  type="radio"
-                                  name="interest"
-                                  value="restaurant" // Value for restaurant interest
-                                  checked={selectedInterest === "restaurant"} // Check if this is the selected one
-                                  onChange={(e) => setSelectedInterest(e.target.value)} // Update the state with the selected value
-                                  className="h-4 w-4 text-blue-600 rounded"
-                                />
-                                <div className="flex items-center space-x-2">
-                                  <Restaurant className="h-5 w-5 text-blue-600" />
-                                  <span>Restaurants</span>
-                                </div>
-                              </label>
-
-                              <label className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
-                                <input
-                                  type="radio"
-                                  name="interest"
-                                  value="shopping" // Value for shopping interest
-                                  checked={selectedInterest === "shopping"} // Check if this is the selected one
-                                  onChange={(e) => setSelectedInterest(e.target.value)} // Update the state with the selected value
-                                  className="h-4 w-4 text-blue-600 rounded"
-                                />
-                                <div className="flex items-center space-x-2">
-                                  <Store className="h-5 w-5 text-blue-600" />
-                                  <span>Shopping</span>
-                                </div>
-                              </label>
-
-                              <label className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
-                                <input
-                                  type="radio"
-                                  name="interest"
-                                  value="activities" // Value for activities interest
-                                  checked={selectedInterest === "activities"} // Check if this is the selected one
-                                  onChange={(e) => setSelectedInterest(e.target.value)} // Update the state with the selected value
-                                  className="h-4 w-4 text-blue-600 rounded"
-                                />
-                                <div className="flex items-center space-x-2">
-                                  <Library className="h-5 w-5 text-blue-600" />
-                                  <span>Activities</span>
-                                </div>
-                              </label>
-                            </div>
-
-                            <div className="flex space-x-4">
-                              <button
-                                type="button"
-                                onClick={() => setCurrentStep(1)}
-                                className="flex-1 bg-gray-100 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-200 transition-colors"
-                              >
-                                Back
-                              </button>
-                              <button
-                                type="submit"
-                                className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors"
-                              >
-                                Show Me Places
-                              </button>
-                            </div>
-                          </div>
-                        </form>
-
-                      )}
-                    </div>
-                  )}
-                </div>
               </div>
             </div>
           </div>
 
           {/* Nearby Places */}
-          {showNearbyPlaces && (
-            <div className="bg-white rounded-2xl shadow-xl p-8">
-              <div className="flex items-center space-x-3 mb-6">
-                <MapPin className="h-6 w-6 text-blue-600" />
-                <h2 className="text-2xl font-semibold">Places Nearby</h2>
-              </div>
-              <div className="grid md:grid-cols-2 gap-6">
-                {recommendations.map((place, index) => (
+          <div className="bg-white rounded-2xl shadow-xl p-8">
+            <div className="flex items-center space-x-3 mb-6">
+              <MapPin className="h-6 w-6 text-blue-600" />
+              <h2 className="text-2xl font-semibold">Places Nearby</h2>
+            </div>
+            <div className="grid md:grid-cols-2 gap-6">
+              {nearbyPlaces.map((place, index) => {
+                return (
                   <div
                     key={index}
                     className="flex items-center p-4 rounded-xl border border-gray-100 hover:border-blue-200 transition-colors"
                   >
-                    <div className="p-3 rounded-full bg-blue-50 text-blue-600 mr-4">
-                      {place.type === "coffee" && <Coffee className="h-5 w-5" />}
-                      {place.type === "restaurant" && (
-                        <Restaurant className="h-5 w-5" />
-                      )}
-                      {place.type === "library" && (
-                        <Library className="h-5 w-5" />
-                      )}
-                    </div>
+                    <div className="p-3 rounded-full bg-blue-50 text-blue-600 mr-4"></div>
                     <div className="flex-1">
                       <h3 className="font-semibold">{place.name}</h3>
                       <p className="text-sm text-gray-600">{place.distance}</p>
@@ -343,11 +180,7 @@ const sendRecommendationsPost = async () => {
                         <span className="text-sm text-gray-600 ml-2">
                           {place.rating}
                         </span>
-                        
                       </div>
-                      <span className="text-sm text-gray-600">
-                        {place.reason}
-                      </span>
                     </div>
                     <div
                       className={`text-sm ${
@@ -357,10 +190,10 @@ const sendRecommendationsPost = async () => {
                       {place.isOpen ? "Open" : "Closed"}
                     </div>
                   </div>
-                ))}
-              </div>
+                );
+              })}
             </div>
-          )}
+          </div>
         </div>
       </div>
     </div>
