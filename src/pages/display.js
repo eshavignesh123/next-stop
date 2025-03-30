@@ -12,12 +12,28 @@ import {
 } from "lucide-react";
 
 export default function Display() {
+  const [showInterestForm, setShowInterestForm] = useState(false);
+  const [showNearbyPlaces, setShowNearbyPlaces] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
+  const [interestText, setInterestText] = useState("");
+  const [recommendations, setRecommendations] = useState([]);
+  const [typeInterests, setTypeInterests] = useState({
+    coffee: false,
+    food: false,
+    shopping: false,
+    activities: false,
+  });
+  const [selectedInterest, setSelectedInterest] = useState(null);
+  const [nearbyData, setNearbyData] = useState([]);
+
   const location = useLocation();
   const {
     trainNumber,
     amtrakStationId,
     location: userLocation,
     arrivalDelay,
+    latitude,
+    longitude,
   } = location.state || {};
 
   // Convert the userLocation object to a string (assuming it might be an object)
@@ -25,49 +41,74 @@ export default function Display() {
     ? JSON.stringify(userLocation)
     : "No location available";
 
-  // Example delay info and nearby places data (you should replace these with real data)
-
-  console.log(arrivalDelay);
-
-  const delayInfo = {
-    severity: "high",
-    minutes: arrivalDelay,
-    reason: "Signal issues",
+  const handleNextStep = (e) => {
+    e.preventDefault();
+    setCurrentStep(2);
   };
-  const nearbyPlaces = [
-    {
-      name: "Coffee Shop",
-      type: "coffee",
-      distance: "200 meters",
-      rating: 4,
-      isOpen: true,
-    },
-    {
-      name: "Restaurant",
-      type: "restaurant",
-      distance: "500 meters",
-      rating: 3,
-      isOpen: false,
-    },
-    {
-      name: "Library",
-      type: "library",
-      distance: "1 km",
-      rating: 5,
-      isOpen: true,
-    },
-  ];
 
-  const getSeverityColor = (severity) => {
-    switch (severity) {
-      case "high":
-        return "bg-red-100 border-red-400";
-      case "medium":
-        return "bg-yellow-100 border-yellow-400";
-      case "low":
-        return "bg-green-100 border-green-400";
-      default:
-        return "bg-gray-100 border-gray-400";
+  // Modified fetchNearbyPlaces to return the data
+  const fetchNearbyPlaces = async (
+    lat,
+    lng,
+    radius = 1000,
+    type = selectedInterest
+  ) => {
+    try {
+      console.log(
+        `Fetching nearby places for lat=${lat}, lng=${lng}, radius=${radius}, type=${type}`
+      );
+      const response = await fetch(
+        `/api/places/nearby?lat=${lat}&lng=${lng}&radius=${radius}&type=${type}`
+      );
+
+      if (!response.ok) throw new Error("Fetch failed");
+
+      const data = await response.json();
+      setNearbyData(data.results); // Update state for UI
+      return data.results; // Return directly for immediate use
+    } catch (error) {
+      console.error("Fetch error:", error);
+      throw error; // Re-throw for handling in caller
+    }
+  };
+
+  // Updated submission handler with proper async flow
+  const handleInterestSubmit = async (e) => {
+    e.preventDefault();
+
+    try {
+      // Fetch first and await completion
+      const places = await fetchNearbyPlaces(latitude, longitude);
+
+      // Update UI states after successful fetch
+      setShowNearbyPlaces(true);
+      setShowInterestForm(false);
+
+      // Pass fetched data directly instead of state
+      await sendRecommendationsPost(places, interestText);
+    } catch (error) {
+      console.error("Submission failed:", error);
+      // Add error state handling here
+    }
+  };
+
+  // Modified recommendation sender
+  const sendRecommendationsPost = async (places, interests) => {
+    try {
+      const response = await fetch("/api/recommendations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nearbyData: places, // Use passed argument
+          interests: interests,
+        }),
+      });
+
+      const data = await response.json();
+      setRecommendations(data.recommendations);
+    } catch (error) {
+      console.error("Recommendation error:", error);
+      throw error;
     }
   };
 
