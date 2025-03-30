@@ -159,7 +159,7 @@ function Home() {
       // Generate prompt for Gemini AI to find the closest matching station
       const prompt = `
         I need to find the closest matching Amtrak station for "${locationName}".
-        Here's a list of all Amtrak stations:
+        Here's a list of all Amtrak stations: ${JSON.stringify(allStations)}
         
         Please respond with ONLY the station code (e.g., "NYP" for New York Penn Station).
         If there's no good match, respond with "NO_MATCH".

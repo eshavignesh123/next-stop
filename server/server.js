@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
 require('dotenv').config();
-const { analyzeInterestsForLocation } = require('./geminiService');
+const { analyzeInterestsForLocation, generateOptimizedSchedule } = require('./geminiService');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -13,6 +13,7 @@ app.use(express.json());
 
 // Google Places API key from environment variables
 const GOOGLE_API_KEY = "AIzaSyCITFRjNxvqBUEyktGp9BnBg7stWCQPKuE";
+const GOOGLE_MAPS_API_KEY = "AIzaSyAE4-ImfdxgR6kmlw28w9HpnG3_vjznuB8";
 
 // Route for getting nearby places based on coordinates
 app.get('/api/places/nearby', async (req, res) => {
@@ -65,6 +66,48 @@ app.post('/api/recommendations', async (req, res) => {
   } catch (error) {
     console.error('Error generating recommendations:', error);
     res.status(500).json({ error: 'Failed to generate recommendations' });
+  }
+});
+
+
+// Route to handle Google Maps API route planning
+app.post('/api/route', async (req, res) => {
+  try {
+    const { origin, destination } = req.body;
+    const response = await axios.get(
+      `https://maps.googleapis.com/maps/api/directions/json`,
+      {
+        params: {
+          origin,
+          destination,
+          key: GOOGLE_MAPS_API_KEY
+        }
+      }
+    );
+
+    res.json(response.data);
+  } catch (error) {
+    console.error('Error generating route:', error);
+    res.status(500).json({ error: 'Failed to generate route' });
+  }
+});
+
+// Route to generate optimized schedule
+app.post('/api/schedule', async (req, res) => {
+  try {
+    const { recommendations, routeTimes, delayTime, date } = req.body;
+
+    if (!recommendations || !routeTimes || !delayTime) {
+      return res.status(400).json({ error: 'Missing recommendations, routeTimes or delayTime' });
+    }
+
+    // Get optimized schedule
+    const result = await generateOptimizedSchedule(recommendations, routeTimes, delayTime, date);
+
+    res.json(result);
+  } catch (error) {
+    console.error('Error generating schedule:', error);
+    res.status(500).json({ error: 'Failed to generate schedule' });
   }
 });
 
