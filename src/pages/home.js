@@ -1,9 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { useNavigate } from 'react-router-dom';
-import { Train, MapPin, Search, ArrowRight } from 'lucide-react';
-
-
+import { useNavigate } from "react-router-dom";
+import { Train, MapPin, Search, ArrowRight } from "lucide-react";
 
 // Google Generative AI Model Setup
 const genAI = new GoogleGenerativeAI(process.env.REACT_APP_GEMINI_API_KEY);
@@ -43,23 +41,100 @@ function Home() {
   const [amtrakStationId, setAmtrakStationId] = useState("");
   const [amtrakStationName, setAmtrakStationName] = useState("");
   const [allStations, setAllStations] = useState([]);
+  const [delayData, setDelayData] = useState(null);
 
   const locationInputRef = useRef(null);
   const API_KEY = process.env.REACT_APP_MAPS_API_KEY;
   const navigate = useNavigate();
 
+  // Function to calculate train delay at a specific station
+  const getTrainDelay = async (trainNumber, stationId) => {
+    if (!trainNumber || !stationId) {
+      console.log("Train number and station ID are required");
+      return null;
+    }
+
+    try {
+      // Fetch train data
+      const response = await fetch(
+        `https://api-v3.amtraker.com/v3/trains/${trainNumber}`
+      );
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const trainData = await response.json();
+
+      // Check if train exists
+      if (!trainData || Object.keys(trainData).length === 0) {
+        console.log(`No data found for train ${trainNumber}`);
+        return null;
+      }
+
+      // Get the train object (first element in the array)
+      const train = trainData[trainNumber][0];
+
+      // Find the station in the train's stations array
+      const stationInfo = train.stations.find(
+        (station) => station.code === stationId
+      );
+
+      console.log("Station: " + JSON.stringify(stationInfo));
+
+      if (!stationInfo) {
+        console.log(
+          `Station ${amtrakStationId} not found for train ${trainNumber}`
+        );
+        return null;
+      }
+
+      console.log(JSON.stringify(stationInfo.schArr));
+      // Calculate arrival delay
+      let arrivalDelay = null;
+      if (stationInfo.schArr && stationInfo.arr) {
+        const scheduledArrival = new Date(stationInfo.schArr);
+        console.log("SCHARV" + scheduledArrival);
+        const estimatedArrival = new Date(stationInfo.arr);
+        console.log("ESTARV" + estimatedArrival);
+        arrivalDelay = Math.round(
+          (estimatedArrival - scheduledArrival) / 60000
+        ); // Convert to minutes
+      }
+
+      // Return the delay information
+      return {
+        trainNumber,
+        stationId,
+        stationName: stationInfo.name || amtrakStationName,
+        arrivalDelay, // Gives the minutes train is delayed for.
+        arrivalComment: stationInfo.arrCmnt || null,
+        departureComment: stationInfo.depCmnt || null,
+        scheduledArrival: stationInfo.schArr
+          ? new Date(stationInfo.schArr).toLocaleTimeString()
+          : null,
+        estimatedArrival: stationInfo.arr
+          ? new Date(stationInfo.arr).toLocaleTimeString()
+          : null,
+      };
+    } catch (error) {
+      console.error("Error calculating train delay:", error);
+      return null;
+    }
+  };
 
   // Fetch All Amtrak Stations
   useEffect(() => {
     const loadAmtrakStations = async () => {
       try {
         const stations = await fetchAllStationsDirectly();
-        const stationsArray = Object.entries(stations).map(([code, details]) => ({
-          code,
-          name: details.name,
-          city: details.city,
-          state: details.state,
-        }));
+        const stationsArray = Object.entries(stations).map(
+          ([code, details]) => ({
+            code,
+            name: details.name,
+            city: details.city,
+            state: details.state,
+          })
+        );
         setAllStations(stationsArray);
       } catch (err) {
         console.error("Error loading Amtrak stations:", err);
@@ -98,7 +173,9 @@ function Home() {
       }
 
       // Find and set the station details
-      const matchedStation = allStations.find((station) => station.code === stationCode);
+      const matchedStation = allStations.find(
+        (station) => station.code === stationCode
+      );
       if (matchedStation) {
         setAmtrakStationId(matchedStation.code);
         setAmtrakStationName(matchedStation.name);
@@ -131,9 +208,12 @@ function Home() {
   // Initialize Google Maps Autocomplete
   useEffect(() => {
     if (isScriptLoaded && locationInputRef.current) {
-      const autocomplete = new window.google.maps.places.Autocomplete(locationInputRef.current, {
-        types: ['train_station'], // Restrict to train stations only
-      });
+      const autocomplete = new window.google.maps.places.Autocomplete(
+        locationInputRef.current,
+        {
+          types: ["train_station"], // Restrict to train stations only
+        }
+      );
 
       autocomplete.addListener("place_changed", async () => {
         const place = autocomplete.getPlace();
@@ -172,22 +252,36 @@ function Home() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-
     // If location is entered but no Amtrak station ID is set yet, try to find it
     if (location && !amtrakStationId) {
       await findAmtrakStation(location);
     }
 
-    try {
-      const response = await fetch(`https://api-v3.amtraker.com/v3/trains/${trainNumber}`);
-      const data = await response.json();
-      setTrainData(data);
-    } catch (error) {
-      console.error("Error fetching train data:", error);
+    if (trainNumber && amtrakStationId) {
+      try {
+        // Get train data
+        const response = await fetch(
+          `https://api-v3.amtraker.com/v3/trains/${trainNumber}`
+        );
+        const data = await response.json();
+        setTrainData(data);
+
+        // Get delay information
+        const delayInfo = await getTrainDelay(trainNumber, amtrakStationId);
+
+        // Set delay information in state
+        if (delayInfo) {
+          setDelayData(delayInfo);
+        }
+      } catch (error) {
+        console.error("Error fetching train data:", error);
+      }
     }
 
     navigate("/display", { state: { trainNumber, amtrakStationId, location } });
 
+    // If using react-router, navigate to display page
+    // navigate("/display");
   };
 
   return (
@@ -259,7 +353,10 @@ function Home() {
                           {amtrakStationName}
                         </p>
                         <p className="text-blue-600 text-sm">
-                          Station ID: <code className="bg-blue-100 px-2 py-1 rounded">{amtrakStationId}</code>
+                          Station ID:{" "}
+                          <code className="bg-blue-100 px-2 py-1 rounded">
+                            {amtrakStationId}
+                          </code>
                         </p>
                       </div>
                     </div>
@@ -272,7 +369,9 @@ function Home() {
                       </h2>
                       <div className="space-y-2">
                         <p className="text-gray-800">{placesData.message}</p>
-                        <p className="text-amber-600 text-sm">{placesData.note}</p>
+                        <p className="text-amber-600 text-sm">
+                          {placesData.note}
+                        </p>
                       </div>
                     </div>
                   )}

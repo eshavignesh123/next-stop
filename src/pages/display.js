@@ -1,35 +1,75 @@
-import React from 'react';
-import { useLocation } from 'react-router-dom';
-import { Train, Clock, AlertCircle, MapPin, Coffee, Restaurant, Library, Store } from 'lucide-react';
+import React from "react";
+import { useLocation } from "react-router-dom";
+import {
+  Train,
+  Clock,
+  AlertCircle,
+  MapPin,
+  Coffee,
+  Restaurant,
+  Library,
+  Store,
+} from "lucide-react";
 
 export default function Display() {
   const location = useLocation();
-  const { trainNumber, amtrakStationId, location: userLocation } = location.state || {};
+  const {
+    trainNumber,
+    amtrakStationId,
+    location: userLocation,
+    delayMinutes,
+  } = location.state || {};
 
   // Convert the userLocation object to a string (assuming it might be an object)
-  const locationString = userLocation ? JSON.stringify(userLocation) : "No location available";
+  const locationString = userLocation
+    ? JSON.stringify(userLocation)
+    : "No location available";
 
   // Example delay info and nearby places data (you should replace these with real data)
-  const delayInfo = { severity: "high", minutes: 20, reason: "Signal issues" };
+
+  console.log(delayMinutes);
+
+  const delayInfo = {
+    severity: "high",
+    minutes: delayMinutes,
+    reason: "Signal issues",
+  };
   const nearbyPlaces = [
-    { name: "Coffee Shop", type: "coffee", distance: "200 meters", rating: 4, isOpen: true },
-    { name: "Restaurant", type: "restaurant", distance: "500 meters", rating: 3, isOpen: false },
-    { name: "Library", type: "library", distance: "1 km", rating: 5, isOpen: true }
+    {
+      name: "Coffee Shop",
+      type: "coffee",
+      distance: "200 meters",
+      rating: 4,
+      isOpen: true,
+    },
+    {
+      name: "Restaurant",
+      type: "restaurant",
+      distance: "500 meters",
+      rating: 3,
+      isOpen: false,
+    },
+    {
+      name: "Library",
+      type: "library",
+      distance: "1 km",
+      rating: 5,
+      isOpen: true,
+    },
   ];
 
   const getSeverityColor = (severity) => {
     switch (severity) {
-      case 'high':
-        return 'bg-red-100 border-red-400';
-      case 'medium':
-        return 'bg-yellow-100 border-yellow-400';
-      case 'low':
-        return 'bg-green-100 border-green-400';
+      case "high":
+        return "bg-red-100 border-red-400";
+      case "medium":
+        return "bg-yellow-100 border-yellow-400";
+      case "low":
+        return "bg-green-100 border-green-400";
       default:
-        return 'bg-gray-100 border-gray-400';
+        return "bg-gray-100 border-gray-400";
     }
   };
-
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white py-12">
@@ -49,15 +89,21 @@ export default function Display() {
                 <div className="grid md:grid-cols-3 gap-6 text-blue-100">
                   <div>
                     <p className="text-sm uppercase">Train Number</p>
-                    <p className="text-xl font-semibold text-white">{trainNumber}</p>
+                    <p className="text-xl font-semibold text-white">
+                      {trainNumber}
+                    </p>
                   </div>
                   <div>
                     <p className="text-sm uppercase">Station ID</p>
-                    <p className="text-xl font-semibold text-white">{amtrakStationId}</p>
+                    <p className="text-xl font-semibold text-white">
+                      {amtrakStationId}
+                    </p>
                   </div>
                   <div>
                     <p className="text-sm uppercase">Location</p>
-                    <p className="text-xl font-semibold text-white">{locationString}</p>
+                    <p className="text-xl font-semibold text-white">
+                      {locationString}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -65,15 +111,23 @@ export default function Display() {
 
             {/* Delay Information */}
             <div className="p-8">
-              <div className={`rounded-xl border p-6 ${getSeverityColor(delayInfo.severity)}`}>
+              <div
+                className={`rounded-xl border p-6 ${getSeverityColor(
+                  delayInfo.severity
+                )}`}
+              >
                 <div className="flex items-start space-x-4">
                   <div className="p-3 rounded-full bg-white/80">
                     <AlertCircle className="h-6 w-6" />
                   </div>
                   <div className="flex-1">
-                    <h2 className="text-xl font-semibold mb-2">Current Delay Status</h2>
+                    <h2 className="text-xl font-semibold mb-2">
+                      Current Delay Status
+                    </h2>
                     <div className="space-y-2">
-                      <p className="text-2xl font-bold">{delayInfo.minutes} minutes</p>
+                      <p className="text-2xl font-bold">
+                        {delayInfo.minutes} minutes
+                      </p>
                       <p className="text-sm opacity-90">{delayInfo.reason}</p>
                     </div>
                   </div>
@@ -95,9 +149,11 @@ export default function Display() {
             <div className="grid md:grid-cols-2 gap-6">
               {nearbyPlaces.map((place, index) => {
                 return (
-                  <div key={index} className="flex items-center p-4 rounded-xl border border-gray-100 hover:border-blue-200 transition-colors">
-                    <div className="p-3 rounded-full bg-blue-50 text-blue-600 mr-4">
-                    </div>
+                  <div
+                    key={index}
+                    className="flex items-center p-4 rounded-xl border border-gray-100 hover:border-blue-200 transition-colors"
+                  >
+                    <div className="p-3 rounded-full bg-blue-50 text-blue-600 mr-4"></div>
                     <div className="flex-1">
                       <h3 className="font-semibold">{place.name}</h3>
                       <p className="text-sm text-gray-600">{place.distance}</p>
@@ -106,17 +162,27 @@ export default function Display() {
                           {[...Array(5)].map((_, i) => (
                             <span
                               key={i}
-                              className={`text-sm ${i < Math.floor(place.rating) ? 'text-yellow-400' : 'text-gray-300'}`}
+                              className={`text-sm ${
+                                i < Math.floor(place.rating)
+                                  ? "text-yellow-400"
+                                  : "text-gray-300"
+                              }`}
                             >
                               ★
                             </span>
                           ))}
                         </div>
-                        <span className="text-sm text-gray-600 ml-2">{place.rating}</span>
+                        <span className="text-sm text-gray-600 ml-2">
+                          {place.rating}
+                        </span>
                       </div>
                     </div>
-                    <div className={`text-sm ${place.isOpen ? 'text-green-600' : 'text-red-600'}`}>
-                      {place.isOpen ? 'Open' : 'Closed'}
+                    <div
+                      className={`text-sm ${
+                        place.isOpen ? "text-green-600" : "text-red-600"
+                      }`}
+                    >
+                      {place.isOpen ? "Open" : "Closed"}
                     </div>
                   </div>
                 );
