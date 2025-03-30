@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { useNavigate } from 'react-router-dom';
+import { Train, MapPin, Search, ArrowRight } from 'lucide-react';
+
 
 
 // Google Generative AI Model Setup
@@ -170,6 +172,7 @@ function Home() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+
     // If location is entered but no Amtrak station ID is set yet, try to find it
     if (location && !amtrakStationId) {
       await findAmtrakStation(location);
@@ -183,66 +186,102 @@ function Home() {
       console.error("Error fetching train data:", error);
     }
 
-    navigate("/display");
+    navigate("/display", { state: { trainNumber, amtrakStationId, location } });
 
   };
 
   return (
-    <div className="w-full min-h-screen flex flex-col justify-center items-center">
-      <h1 className="text-6xl font-bold mb-[10px]">Welcome to Next Stop!</h1>
-      <p className="text-xl mb-[30px]">
-        Your go-to companion for entertainment during train delays.
-      </p>
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex items-center justify-center">
+      <div className="min-h-screen flex items-center container mx-auto px-4 py-12 ">
+        <div className="max-w-3xl mx-auto">
+          {/* Hero Section with Form */}
+          <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+            <div className="relative bg-blue-600 text-white px-8 py-12">
+              <div className="absolute top-0 right-0 w-64 h-64 opacity-10">
+                <Train className="w-full h-full" />
+              </div>
+              <h1 className="text-4xl md:text-5xl font-bold mb-4 leading-tight">
+                Welcome to Next Stop!
+              </h1>
+              <p className="text-xl text-blue-100">
+                Your go-to companion for entertainment during train delays.
+              </p>
+            </div>
 
-      {/* Form to Enter Train Details */}
-      <form className="w-[460px] flex flex-col justify-center gap-4" onSubmit={handleSubmit}>
-        <input
-          type="text"
-          className="bg-gray-700 p-2 rounded-md text-white"
-          value={trainNumber}
-          placeholder="Enter your train number"
-          onChange={(e) => setTrainNumber(e.target.value)}
-        />
+            <div className="p-8">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="space-y-4">
+                  <div className="relative">
+                    <Train className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                    <input
+                      type="text"
+                      className="w-full pl-12 pr-4 py-3 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors bg-gray-50 text-gray-900"
+                      placeholder="Enter your train number"
+                      value={trainNumber}
+                      onChange={(e) => setTrainNumber(e.target.value)}
+                    />
+                  </div>
 
-        <input
-          ref={locationInputRef}
-          type="text"
-          className="bg-gray-700 p-2 rounded-md text-white"
-          placeholder="Enter your location"
-          value={location}
-          onChange={(e) => setLocation(e.target.value)}
-        />
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                    <input
+                      ref={locationInputRef}
+                      type="text"
+                      className="w-full pl-12 pr-4 py-3 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors bg-gray-50 text-gray-900"
+                      placeholder="Enter your location"
+                      value={location}
+                      onChange={(e) => setLocation(e.target.value)}
+                    />
+                  </div>
+                </div>
 
-        <div className="flex justify-center">
-          <button type="submit" className="bg-blue-500 p-2 rounded-md text-white w-[100px]">
-            Submit
-          </button>
-        </div>
-      </form>
+                <div className="flex justify-center">
+                  <button
+                    type="submit"
+                    className="group relative bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors duration-200 flex items-center space-x-2"
+                  >
+                    <span>Find Entertainment</span>
+                    <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform duration-200" />
+                  </button>
+                </div>
+              </form>
 
-      {/* Display Selected Amtrak Station */}
-      {amtrakStationId && (
-        <div className="mt-4">
-          <h2 className="text-xl font-bold">Selected Amtrak Station:</h2>
-          <div className="bg-gray-800 p-4 rounded-md text-white">
-            <p>{amtrakStationName}</p>
-            <p>
-              Amtrak Station ID: <code>{amtrakStationId}</code>
-            </p>
+              {/* Results Section */}
+              {(amtrakStationId || placesData) && (
+                <div className="mt-8 space-y-6">
+                  {amtrakStationId && (
+                    <div className="bg-blue-50 rounded-lg p-6 border border-blue-100">
+                      <h2 className="text-xl font-semibold text-blue-900 mb-4">
+                        Selected Station
+                      </h2>
+                      <div className="space-y-2">
+                        <p className="text-blue-800 font-medium">
+                          {amtrakStationName}
+                        </p>
+                        <p className="text-blue-600 text-sm">
+                          Station ID: <code className="bg-blue-100 px-2 py-1 rounded">{amtrakStationId}</code>
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {placesData && (
+                    <div className="bg-gray-50 rounded-lg p-6 border border-gray-100">
+                      <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                        Nearby Places
+                      </h2>
+                      <div className="space-y-2">
+                        <p className="text-gray-800">{placesData.message}</p>
+                        <p className="text-amber-600 text-sm">{placesData.note}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      )}
-
-      {/* Display Places Data */}
-      {placesData && (
-        <div className="mt-4">
-          <h2 className="text-xl font-bold">Places API Test:</h2>
-          <div className="bg-gray-800 p-4 rounded-md text-white">
-            <p>{placesData.message}</p>
-            <p className="text-yellow-300 text-sm mt-2">{placesData.note}</p>
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 }
