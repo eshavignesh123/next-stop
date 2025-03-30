@@ -35,16 +35,11 @@ function Home() {
   // State variables
   const [trainNumber, setTrainNumber] = useState("");
   const [location, setLocation] = useState("");
-  const [trainData, setTrainData] = useState(null);
   const [placesData, setPlacesData] = useState(null);
   const [isScriptLoaded, setIsScriptLoaded] = useState(false);
   const [amtrakStationId, setAmtrakStationId] = useState("");
   const [amtrakStationName, setAmtrakStationName] = useState("");
   const [allStations, setAllStations] = useState([]);
-  const [delayData, setDelayData] = useState(null);
-  const [arrivalDelayData, setArrivalDelayData] = useState(null);
-
-
   const locationInputRef = useRef(null);
   const API_KEY = process.env.REACT_APP_MAPS_API_KEY;
   const navigate = useNavigate();
@@ -126,27 +121,27 @@ function Home() {
     }
   };
 
-  // Fetch All Amtrak Stations
-  useEffect(() => {
-    const loadAmtrakStations = async () => {
-      try {
-        const stations = await fetchAllStationsDirectly();
-        const stationsArray = Object.entries(stations).map(
-          ([code, details]) => ({
-            code,
-            name: details.name,
-            city: details.city,
-            state: details.state,
-          })
-        );
-        setAllStations(stationsArray);
-      } catch (err) {
-        console.error("Error loading Amtrak stations:", err);
-      }
-    };
-
-    loadAmtrakStations();
-  }, []);
+  const fetchAllStationsDirectly = async () => {
+    try {
+      const response = await fetch("https://api-v3.amtraker.com/v3/stations");
+      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+      const stations = await response.json();
+      return stations;
+    } catch (error) {
+      console.error("Error fetching stations:", error);
+      throw error;
+    }
+  };
+  
+  const generateContent = async (prompt) => {
+    try {
+      const result = await model.generateContent(prompt);
+      return result.response.text();
+    } catch (error) {
+      console.error("Error generating content:", error);
+      return null;
+    }
+  };
 
   // Find Closest Amtrak Station
   const findAmtrakStation = async (locationName) => {
@@ -238,29 +233,43 @@ function Home() {
     }
   }, [isScriptLoaded]);
 
+  // Fetch All Amtrak Stations
   useEffect(() => {
-    if (arrivalDelayData !== null) {
-      navigate("/display", {
-        state: { trainNumber, amtrakStationId, location, arrivalDelay: arrivalDelayData },
-      });
-    }
-  }, [arrivalDelayData]); // Runs when arrivalDelayData updates
+    const loadAmtrakStations = async () => {
+      try {
+        const stations = await fetchAllStationsDirectly();
+        const stationsArray = Object.entries(stations).map(
+          ([code, details]) => ({
+            code,
+            name: details.name,
+            city: details.city,
+            state: details.state,
+          })
+        );
+        setAllStations(stationsArray);
+      } catch (err) {
+        console.error("Error loading Amtrak stations:", err);
+      }
+    };
+
+    loadAmtrakStations();
+  }, []);
 
   // Fetch Nearby Places (e.g., restaurants)
-const fetchNearbyPlaces = async (lat, lng, radius = 1000, type = 'restaurant') => {
-  try {
-    const response = await fetch(`/api/places/nearby?lat=${lat}&lng=${lng}&radius=${radius}&type=${type}`);
-    if (response.ok) {
-      const data = await response.json();
-      console.log(data);  // Check the response structure
-      setPlacesData(data.results);
-    } else {
-      console.error("Error fetching places:", response.status);
+  const fetchNearbyPlaces = async (lat, lng, radius = 1000, type = 'restaurant') => {
+    try {
+      const response = await fetch(`/api/places/nearby?lat=${lat}&lng=${lng}&radius=${radius}&type=${type}`);
+      if (response.ok) {
+        const data = await response.json();
+        console.log(data);  // Check the response structure
+        setPlacesData(data.results);
+      } else {
+        console.error("Error fetching places:", response.status);
+      }
+    } catch (error) {
+      console.error("Error fetching nearby places:", error);
     }
-  } catch (error) {
-    console.error("Error fetching nearby places:", error);
-  }
-};
+  };
 
   // Handle form submission
   const handleSubmit = async (e) => {
@@ -282,11 +291,9 @@ const fetchNearbyPlaces = async (lat, lng, radius = 1000, type = 'restaurant') =
           `https://api-v3.amtraker.com/v3/trains/${trainNumber}`
         );
         const data = await response.json();
-        setTrainData(data);
   
         // Fetch delay info
         const delayInfo = await getTrainDelay(trainNumber, amtrakStationId);
-        if (delayInfo) setDelayData(delayInfo);
   
         navigate("/display", {
           state: { trainNumber, amtrakStationId, location, arrivalDelay: delayInfo.arrivalDelay, nearbyData: placesData },
@@ -296,8 +303,6 @@ const fetchNearbyPlaces = async (lat, lng, radius = 1000, type = 'restaurant') =
       }
     }
   };
-
-
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex items-center justify-center">
@@ -356,7 +361,7 @@ const fetchNearbyPlaces = async (lat, lng, radius = 1000, type = 'restaurant') =
               </form>
 
               {/* Results Section */}
-              {(amtrakStationId || placesData) && (
+              {(amtrakStationId) && (
                 <div className="mt-8 space-y-6">
                   {amtrakStationId && (
                     <div className="bg-blue-50 rounded-lg p-6 border border-blue-100">
@@ -377,19 +382,7 @@ const fetchNearbyPlaces = async (lat, lng, radius = 1000, type = 'restaurant') =
                     </div>
                   )}
 
-                  {placesData && (
-                    <div className="bg-gray-50 rounded-lg p-6 border border-gray-100">
-                      <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                        Nearby Places
-                      </h2>
-                      <div className="space-y-2">
-                        <p className="text-gray-800">{placesData.message}</p>
-                        <p className="text-amber-600 text-sm">
-                          {placesData.note}
-                        </p>
-                      </div>
-                    </div>
-                  )}
+                  
                 </div>
               )}
             </div>
