@@ -238,27 +238,35 @@ function Home() {
     }
   }, [isScriptLoaded]);
 
-  // Fetch Nearby Places (e.g., restaurants)
-  const fetchNearbyPlaces = async (lat, lng) => {
-    try {
-      const proxyUrl = `https://cors-anywhere.herokuapp.com/https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=1000&type=restaurant&key=${API_KEY}`;
-      console.log(`Would fetch nearby places at: ${lat},${lng}`);
-      setPlacesData({
-        message: `Found restaurants near ${lat},${lng}`,
-        note: "This is a simulation. In production, implement this call on your backend.",
+  useEffect(() => {
+    if (arrivalDelayData !== null) {
+      navigate("/display", {
+        state: { trainNumber, amtrakStationId, location, arrivalDelay: arrivalDelayData, locationName: location },
       });
+    }
+  }, [arrivalDelayData]); // Runs when arrivalDelayData updates
+
+  // Fetch Nearby Places (e.g., restaurants)
+  const fetchNearbyPlaces = async (lat, lng, radius = 1000, type = 'restaurant') => {
+    try {
+      const response = await fetch(
+        `/api/places/nearby?lat=${lat}&lng=${lng}&radius=${radius}`
+      ); // Call the backend route
+  
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Nearby Places Data:", data); // Check the response structure
+        setPlacesData(data.results);
+      } else {
+        console.error("Error fetching places:", response.status);
+      }
     } catch (error) {
       console.error("Error fetching nearby places:", error);
     }
   };
-  useEffect(() => {
-    if (arrivalDelayData !== null) {
-      navigate("/display", {
-        state: { trainNumber, amtrakStationId, location, arrivalDelay: arrivalDelayData },
-      });
-    }
-  }, [arrivalDelayData]); // Runs when arrivalDelayData updates
   
+  
+
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -286,7 +294,7 @@ function Home() {
         if (delayInfo) setDelayData(delayInfo);
   
         navigate("/display", {
-          state: { trainNumber, amtrakStationId, location, arrivalDelay: delayInfo.arrivalDelay },
+          state: { trainNumber, amtrakStationId, location, arrivalDelay: delayInfo.arrivalDelay, nearbyData: placesData },
         });
       } catch (error) {
         console.error("Error fetching train data:", error);
