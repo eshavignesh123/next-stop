@@ -17,7 +17,7 @@ export default function Display() {
     trainNumber,
     amtrakStationId,
     location: userLocation,
-    delayMinutes,
+    arrivalDelay 
   } = location.state || {};
 
   // Convert the userLocation object to a string (assuming it might be an object)
@@ -27,11 +27,11 @@ export default function Display() {
 
   // Example delay info and nearby places data (you should replace these with real data)
 
-  console.log(delayMinutes);
+  console.log("Delay minutes:", arrivalDelay);
 
   const delayInfo = {
     severity: "high",
-    minutes: delayMinutes,
+    minutes: arrivalDelay,
     reason: "Signal issues",
   };
   const nearbyPlaces = [
@@ -126,7 +126,7 @@ export default function Display() {
                     </h2>
                     <div className="space-y-2">
                       <p className="text-2xl font-bold">
-                        {delayInfo.minutes} minutes
+                        {arrivalDelay} minutes
                       </p>
                       <p className="text-sm opacity-90">{delayInfo.reason}</p>
                     </div>
