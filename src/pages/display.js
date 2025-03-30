@@ -14,8 +14,8 @@ export default function Display() {
     shopping: false,
     activities: false,
   });
-  const [interests, setInterests] = useState();
   const [selectedInterest, setSelectedInterest] = useState(null);
+  const[nearbyData, setNearbyData] = useState([]);
 
   const location = useLocation();
   const {
@@ -23,7 +23,8 @@ export default function Display() {
     amtrakStationId,
     location: userLocation,
     arrivalDelay,
-    nearbyData
+    latitude,
+    longitude
   } = location.state || {};
 
   console.log("Nearby Data:", nearbyData);
@@ -39,34 +40,66 @@ export default function Display() {
     setCurrentStep(2);
   };
 
-  const handleInterestSubmit = (e) => {
-    e.preventDefault();
-    setShowNearbyPlaces(true);
-    setShowInterestForm(false);
-    setCurrentStep(1);
-    sendRecommendationsPost();
-
+  // Modified fetchNearbyPlaces to return the data
+  const fetchNearbyPlaces = async (lat, lng, radius = 1000, type = selectedInterest) => {
+    try {
+      console.log(`Fetching nearby places for lat=${lat}, lng=${lng}, radius=${radius}, type=${type}`);
+      const response = await fetch(`/api/places/nearby?lat=${lat}&lng=${lng}&radius=${radius}&type=${type}`);
+      
+      if (!response.ok) throw new Error('Fetch failed');
+      
+      const data = await response.json();
+      setNearbyData(data.results); // Update state for UI
+      return data.results; // Return directly for immediate use
+      
+    } catch (error) {
+      console.error("Fetch error:", error);
+      throw error; // Re-throw for handling in caller
+    }
   };
-// Frontend: Display.jsx
-const sendRecommendationsPost = async () => {
-  try {
-    console.log(nearbyData)
-    console.log(interestText)
-    const response = await fetch('/api/recommendations', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        nearbyData: nearbyData,
-        interests: interestText
-      })
-    });
-    const data = await response.json();
-    console.log("Recommendations:", data.recommendations);
-    setRecommendations(data.recommendations);
-  } catch (error) {
-    console.error('Error:', error);
-  }
-};
+
+  // Updated submission handler with proper async flow
+  const handleInterestSubmit = async (e) => {
+    e.preventDefault();
+    
+    try {
+      // Fetch first and await completion
+      const places = await fetchNearbyPlaces(latitude, longitude);
+      
+      // Update UI states after successful fetch
+      setShowNearbyPlaces(true);
+      setShowInterestForm(false);
+      
+      // Pass fetched data directly instead of state
+      await sendRecommendationsPost(places, interestText);
+      
+    } catch (error) {
+      console.error("Submission failed:", error);
+      // Add error state handling here
+    }
+  };
+
+  // Modified recommendation sender
+  const sendRecommendationsPost = async (places, interests) => {
+    try {
+      const response = await fetch('/api/recommendations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nearbyData: places, // Use passed argument
+          interests: interests
+        })
+      });
+      
+      const data = await response.json();
+      setRecommendations(data.recommendations);
+      
+    } catch (error) {
+      console.error('Recommendation error:', error);
+      throw error;
+    }
+  };
+
   
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white py-12">

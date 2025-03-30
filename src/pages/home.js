@@ -40,6 +40,9 @@ function Home() {
   const [amtrakStationId, setAmtrakStationId] = useState("");
   const [amtrakStationName, setAmtrakStationName] = useState("");
   const [allStations, setAllStations] = useState([]);
+  const [latitude, setLatitude] = useState([]);
+  const [longitude, setLongitude] = useState([]);
+
   const locationInputRef = useRef(null);
   const API_KEY = process.env.REACT_APP_MAPS_API_KEY;
   const navigate = useNavigate();
@@ -142,7 +145,7 @@ function Home() {
       return null;
     }
   };
-
+  
   // Find Closest Amtrak Station
   const findAmtrakStation = async (locationName) => {
     if (!locationName || !locationName.trim() || allStations.length === 0) {
@@ -224,9 +227,8 @@ function Home() {
 
           // Fetch nearby places if coordinates are available
           if (place.geometry && place.geometry.location) {
-            const lat = place.geometry.location.lat();
-            const lng = place.geometry.location.lng();
-            fetchNearbyPlaces(lat, lng);
+            setLatitude(place.geometry.location.lat());
+            setLongitude(place.geometry.location.lng());
           }
         }
       });
@@ -255,21 +257,6 @@ function Home() {
     loadAmtrakStations();
   }, []);
 
-  // Fetch Nearby Places (e.g., restaurants)
-  const fetchNearbyPlaces = async (lat, lng, radius = 1000, type = 'restaurant') => {
-    try {
-      const response = await fetch(`/api/places/nearby?lat=${lat}&lng=${lng}&radius=${radius}&type=${type}`);
-      if (response.ok) {
-        const data = await response.json();
-        console.log(data);  // Check the response structure
-        setPlacesData(data.results);
-      } else {
-        console.error("Error fetching places:", response.status);
-      }
-    } catch (error) {
-      console.error("Error fetching nearby places:", error);
-    }
-  };
 
   // Handle form submission
   const handleSubmit = async (e) => {
@@ -290,13 +277,12 @@ function Home() {
         const response = await fetch(
           `https://api-v3.amtraker.com/v3/trains/${trainNumber}`
         );
-        const data = await response.json();
   
         // Fetch delay info
         const delayInfo = await getTrainDelay(trainNumber, amtrakStationId);
   
         navigate("/display", {
-          state: { trainNumber, amtrakStationId, location, arrivalDelay: delayInfo.arrivalDelay, nearbyData: placesData },
+          state: { trainNumber, amtrakStationId, location, arrivalDelay: delayInfo.arrivalDelay, latitude, longitude },
         });
       } catch (error) {
         console.error("Error fetching train data:", error);

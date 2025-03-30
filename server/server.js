@@ -17,8 +17,7 @@ const GOOGLE_API_KEY = "AIzaSyCITFRjNxvqBUEyktGp9BnBg7stWCQPKuE";
 // Route for getting nearby places based on coordinates
 app.get('/api/places/nearby', async (req, res) => {
   try {
-    const { lat, lng, radius = 1000 } = req.query;
-
+    const { lat, lng, radius = 1000, type } = req.query;
     // Validate parameters
     if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
       return res.status(400).json({ error: 'Invalid coordinates' });
@@ -34,6 +33,7 @@ app.get('/api/places/nearby', async (req, res) => {
         params: {
           location: `${lat},${lng}`,
           radius: radius,
+          type: type,
           key: GOOGLE_API_KEY
         }
       }
