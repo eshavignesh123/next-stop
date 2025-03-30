@@ -241,31 +241,26 @@ function Home() {
   useEffect(() => {
     if (arrivalDelayData !== null) {
       navigate("/display", {
-        state: { trainNumber, amtrakStationId, location, arrivalDelay: arrivalDelayData, locationName: location },
+        state: { trainNumber, amtrakStationId, location, arrivalDelay: arrivalDelayData },
       });
     }
   }, [arrivalDelayData]); // Runs when arrivalDelayData updates
 
   // Fetch Nearby Places (e.g., restaurants)
-  const fetchNearbyPlaces = async (lat, lng, radius = 1000, type = 'restaurant') => {
-    try {
-      const response = await fetch(
-        `/api/places/nearby?lat=${lat}&lng=${lng}&radius=${radius}`
-      ); // Call the backend route
-  
-      if (response.ok) {
-        const data = await response.json();
-        console.log("Nearby Places Data:", data); // Check the response structure
-        setPlacesData(data.results);
-      } else {
-        console.error("Error fetching places:", response.status);
-      }
-    } catch (error) {
-      console.error("Error fetching nearby places:", error);
+const fetchNearbyPlaces = async (lat, lng, radius = 1000, type = 'restaurant') => {
+  try {
+    const response = await fetch(`/api/places/nearby?lat=${lat}&lng=${lng}&radius=${radius}&type=${type}`);
+    if (response.ok) {
+      const data = await response.json();
+      console.log(data);  // Check the response structure
+      setPlacesData(data.results);
+    } else {
+      console.error("Error fetching places:", response.status);
     }
-  };
-  
-  
+  } catch (error) {
+    console.error("Error fetching nearby places:", error);
+  }
+};
 
   // Handle form submission
   const handleSubmit = async (e) => {

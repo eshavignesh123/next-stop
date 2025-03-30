@@ -15,6 +15,7 @@ export default function Display() {
     activities: false,
   });
   const [interests, setInterests] = useState();
+  const [selectedInterest, setSelectedInterest] = useState(null);
 
   const location = useLocation();
   const {
@@ -31,29 +32,7 @@ export default function Display() {
     ? JSON.stringify(userLocation)
     : "No location available";
 
-  const nearbyPlaces = [
-    {
-      name: "Coffee Shop",
-      type: "coffee",
-      distance: "200 meters",
-      rating: 4,
-      isOpen: true,
-    },
-    {
-      name: "Restaurant",
-      type: "restaurant",
-      distance: "500 meters",
-      rating: 3,
-      isOpen: false,
-    },
-    {
-      name: "Library",
-      type: "library",
-      distance: "1 km",
-      rating: 5,
-      isOpen: true,
-    },
-  ];
+
 
   const handleNextStep = (e) => {
     e.preventDefault();
@@ -65,45 +44,30 @@ export default function Display() {
     setShowNearbyPlaces(true);
     setShowInterestForm(false);
     setCurrentStep(1);
-    fetchRecommendations();
+    sendRecommendationsPost();
+
   };
-
-  const fetchRecommendations = async () => {
-    try {
-      const nearbyData = nearbyData;
-      const interests = interestText.split(",");
+// Frontend: Display.jsx
+const sendRecommendationsPost = async () => {
+  try {
+    console.log(nearbyData)
+    console.log(interestText)
+    const response = await fetch('/api/recommendations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nearbyData: nearbyData,
+        interests: interestText
+      })
+    });
+    const data = await response.json();
+    console.log("Recommendations:", data.recommendations);
+    setRecommendations(data.recommendations);
+  } catch (error) {
+    console.error('Error:', error);
+  }
+};
   
-      // Prepare the query string with nearbyData and interests as query parameters
-      const query = new URLSearchParams({
-        nearbyData: JSON.stringify(nearbyData),
-        interests: JSON.stringify(interests),
-      }).toString();
-  
-      const response = await fetch(`/api/recommendations?${query}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-  
-      if (!response.ok) {
-        return;
-      }
-  
-      const data = await response.json();
-      console.log(data);
-      setRecommendations(data); // Assuming setRecommendations is a state setter
-    } catch (error) {
-      console.error("Error fetching recommendations:", error);
-    }
-  };
-  
-
-  useEffect(() => {
-    fetchRecommendations();
-  }, []);
-
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white py-12">
       <div className="container mx-auto px-4">
@@ -242,6 +206,7 @@ export default function Display() {
                           </div>
                         </form>
                       ) : (
+
                         <form onSubmit={handleInterestSubmit}>
                           <div className="space-y-4">
                             <p className="text-lg font-medium text-gray-900">
@@ -250,14 +215,11 @@ export default function Display() {
                             <div className="grid grid-cols-2 gap-4">
                               <label className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
                                 <input
-                                  type="checkbox"
-                                  checked={typeInterests.coffee}
-                                  onChange={(e) =>
-                                    setInterests({
-                                      ...typeInterests,
-                                      coffee: e.target.checked,
-                                    })
-                                  }
+                                  type="radio"
+                                  name="interest"
+                                  value="coffee" // Value for coffee interest
+                                  checked={selectedInterest === "coffee"} // Check if this is the selected one
+                                  onChange={(e) => setSelectedInterest(e.target.value)} // Update the state with the selected value
                                   className="h-4 w-4 text-blue-600 rounded"
                                 />
                                 <div className="flex items-center space-x-2">
@@ -265,16 +227,14 @@ export default function Display() {
                                   <span>Coffee Shops</span>
                                 </div>
                               </label>
+
                               <label className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
                                 <input
-                                  type="checkbox"
-                                  checked={typeInterests.food}
-                                  onChange={(e) =>
-                                    setInterests({
-                                      ...typeInterests,
-                                      food: e.target.checked,
-                                    })
-                                  }
+                                  type="radio"
+                                  name="interest"
+                                  value="restaurant" // Value for restaurant interest
+                                  checked={selectedInterest === "restaurant"} // Check if this is the selected one
+                                  onChange={(e) => setSelectedInterest(e.target.value)} // Update the state with the selected value
                                   className="h-4 w-4 text-blue-600 rounded"
                                 />
                                 <div className="flex items-center space-x-2">
@@ -282,16 +242,14 @@ export default function Display() {
                                   <span>Restaurants</span>
                                 </div>
                               </label>
+
                               <label className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
                                 <input
-                                  type="checkbox"
-                                  checked={typeInterests.shopping}
-                                  onChange={(e) =>
-                                    setInterests({
-                                      ...typeInterests,
-                                      shopping: e.target.checked,
-                                    })
-                                  }
+                                  type="radio"
+                                  name="interest"
+                                  value="shopping" // Value for shopping interest
+                                  checked={selectedInterest === "shopping"} // Check if this is the selected one
+                                  onChange={(e) => setSelectedInterest(e.target.value)} // Update the state with the selected value
                                   className="h-4 w-4 text-blue-600 rounded"
                                 />
                                 <div className="flex items-center space-x-2">
@@ -299,16 +257,14 @@ export default function Display() {
                                   <span>Shopping</span>
                                 </div>
                               </label>
+
                               <label className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
                                 <input
-                                  type="checkbox"
-                                  checked={typeInterests.activities}
-                                  onChange={(e) =>
-                                    setInterests({
-                                      ...typeInterests,
-                                      activities: e.target.checked,
-                                    })
-                                  }
+                                  type="radio"
+                                  name="interest"
+                                  value="activities" // Value for activities interest
+                                  checked={selectedInterest === "activities"} // Check if this is the selected one
+                                  onChange={(e) => setSelectedInterest(e.target.value)} // Update the state with the selected value
                                   className="h-4 w-4 text-blue-600 rounded"
                                 />
                                 <div className="flex items-center space-x-2">
@@ -317,6 +273,7 @@ export default function Display() {
                                 </div>
                               </label>
                             </div>
+
                             <div className="flex space-x-4">
                               <button
                                 type="button"
@@ -334,6 +291,7 @@ export default function Display() {
                             </div>
                           </div>
                         </form>
+
                       )}
                     </div>
                   )}
@@ -350,7 +308,7 @@ export default function Display() {
                 <h2 className="text-2xl font-semibold">Places Nearby</h2>
               </div>
               <div className="grid md:grid-cols-2 gap-6">
-                {nearbyPlaces.map((place, index) => (
+                {recommendations.map((place, index) => (
                   <div
                     key={index}
                     className="flex items-center p-4 rounded-xl border border-gray-100 hover:border-blue-200 transition-colors"
@@ -385,7 +343,11 @@ export default function Display() {
                         <span className="text-sm text-gray-600 ml-2">
                           {place.rating}
                         </span>
+                        
                       </div>
+                      <span className="text-sm text-gray-600">
+                        {place.reason}
+                      </span>
                     </div>
                     <div
                       className={`text-sm ${
